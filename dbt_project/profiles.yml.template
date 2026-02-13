@@ -1,0 +1,28 @@
+# DBT Profile Configuration for Mobile Measurement Pipeline
+# Copy this file to %USERPROFILE%\.dbt\profiles.yml (Windows) or ~/.dbt/profiles.yml (Linux/Mac)
+# and update with your GCP credentials
+
+mobile_measurement:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BQ_DATASET', 'mobile_measurement') }}"
+      threads: 4
+      timeout_seconds: 300
+      location: US  # Change to match your dataset location
+      priority: interactive
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+
+    prod:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BQ_DATASET', 'mobile_measurement') }}"
+      threads: 8
+      timeout_seconds: 600
+      location: US
+      priority: batch
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"

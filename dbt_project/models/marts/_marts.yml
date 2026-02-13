@@ -1,0 +1,123 @@
+version: 2
+
+models:
+  - name: mart_installs_reinstalls
+    description: |
+      Installs and reinstalls aggregated across daily, weekly, and monthly time grains.
+      This mart combines multiple aggregation levels for flexible reporting.
+    columns:
+      - name: grain
+        description: Time grain (daily, weekly, monthly)
+        tests:
+          - accepted_values:
+              values: ['daily', 'weekly', 'monthly']
+      - name: period
+        description: Period identifier (formatted as YYYY-MM-DD string)
+        tests:
+          - not_null
+      - name: partner
+        description: Mobile measurement partner
+        tests:
+          - not_null
+      - name: platform
+        description: Mobile platform (iOS or Android)
+        tests:
+          - not_null
+      - name: installs
+        description: Count of install events
+      - name: reinstalls
+        description: Count of reinstall events
+      - name: total_install_events
+        description: Sum of installs and reinstalls
+      - name: total_install_cost
+        description: Total cost for install and reinstall events
+
+  - name: mart_click_through_rate
+    description: |
+      Click-through rate (CTR) metrics aggregated across daily, weekly, and monthly time grains.
+      CTR is calculated as clicks divided by impressions.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "ctr >= 0 AND ctr <= 1"
+          config:
+            where: "ctr IS NOT NULL"
+      - dbt_utils.expression_is_true:
+          expression: "impressions >= clicks"
+    columns:
+      - name: grain
+        description: Time grain (daily, weekly, monthly)
+        tests:
+          - accepted_values:
+              values: ['daily', 'weekly', 'monthly']
+      - name: period
+        description: Period identifier (formatted as YYYY-MM-DD string)
+        tests:
+          - not_null
+      - name: partner
+        description: Mobile measurement partner
+        tests:
+          - not_null
+      - name: platform
+        description: Mobile platform (iOS or Android)
+        tests:
+          - not_null
+      - name: clicks
+        description: Count of click events
+      - name: impressions
+        description: Count of impression events
+      - name: ctr
+        description: Click-through rate (decimal between 0 and 1)
+      - name: ctr_percentage
+        description: Click-through rate as percentage
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+              config:
+                where: "ctr_percentage IS NOT NULL"
+
+  - name: mart_cost_per_install
+    description: |
+      Cost per install (CPI) metrics aggregated across daily, weekly, and monthly time grains.
+      Includes both direct CPI (install cost only) and blended CPI (total cost including impressions/clicks).
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "cpi_direct >= 0"
+          config:
+            where: "cpi_direct IS NOT NULL"
+      - dbt_utils.expression_is_true:
+          expression: "cpi_blended >= cpi_direct"
+          config:
+            where: "cpi_blended IS NOT NULL AND cpi_direct IS NOT NULL"
+    columns:
+      - name: grain
+        description: Time grain (daily, weekly, monthly)
+        tests:
+          - accepted_values:
+              values: ['daily', 'weekly', 'monthly']
+      - name: period
+        description: Period identifier (formatted as YYYY-MM-DD string)
+        tests:
+          - not_null
+      - name: partner
+        description: Mobile measurement partner
+        tests:
+          - not_null
+      - name: platform
+        description: Mobile platform (iOS or Android)
+        tests:
+          - not_null
+      - name: installs
+        description: Count of install events
+      - name: install_cost
+        description: Direct cost of install events
+      - name: total_cost
+        description: Total cost across all event types
+      - name: cpi_direct
+        description: Cost per install (install cost only)
+      - name: cpi_blended
+        description: Blended cost per install (total cost / installs)
+      - name: cpi_direct_rounded
+        description: Direct CPI rounded to 2 decimal places
+      - name: cpi_blended_rounded
+        description: Blended CPI rounded to 2 decimal places

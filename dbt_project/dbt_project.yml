@@ -1,0 +1,59 @@
+name: 'mobile_measurement'
+version: '1.0.0'
+config-version: 2
+
+profile: 'mobile_measurement'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Model configurations
+models:
+  mobile_measurement:
+    +persist_docs:
+      relation: true
+      columns: true
+
+    # Staging layer - views for minimal cost
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["staging"]
+
+    # Intermediate layer - tables for better performance
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+      +tags: ["intermediate"]
+
+    # Marts layer - tables for analytics consumption
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ["marts", "daily_refresh"]
+
+# Project variables
+vars:
+  # Date range for historical data
+  start_date: '2026-01-01'
+  end_date: '2026-02-12'
+
+# Documentation
+docs-paths: ["docs"]
+
+# Testing
+on-run-start:
+  - "/* DBT run started at {{ run_started_at }} */"
+
+on-run-end:
+  - "/* DBT run completed at {{ run_started_at }} */"
