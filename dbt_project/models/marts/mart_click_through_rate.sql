@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        description='Installs and reinstalls aggregated across multiple time grains (daily/weekly/monthly)'
+        description='Click-through rate (CTR) metrics aggregated across multiple time grains (daily/weekly/monthly)'
     )
 }}
 
@@ -11,11 +11,12 @@ WITH daily AS (
         CAST(event_date AS STRING) AS period,
         partner,
         platform,
-        installs,
-        reinstalls,
-        installs + reinstalls AS total_install_events,
-        install_cost + reinstall_cost AS total_install_cost
+        clicks,
+        impressions,
+        SAFE_DIVIDE(clicks, impressions) AS ctr,
+        ROUND(SAFE_DIVIDE(clicks, impressions) * 100, 2) AS ctr_percentage
     FROM {{ ref('int_daily_metrics') }}
+    WHERE impressions > 0  -- Only include records with impressions for valid CTR
 ),
 
 weekly AS (
@@ -24,11 +25,12 @@ weekly AS (
         CAST(week_start_date AS STRING) AS period,
         partner,
         platform,
-        installs,
-        reinstalls,
-        installs + reinstalls AS total_install_events,
-        install_cost + reinstall_cost AS total_install_cost
+        clicks,
+        impressions,
+        SAFE_DIVIDE(clicks, impressions) AS ctr,
+        ROUND(SAFE_DIVIDE(clicks, impressions) * 100, 2) AS ctr_percentage
     FROM {{ ref('int_weekly_metrics') }}
+    WHERE impressions > 0
 ),
 
 monthly AS (
@@ -37,11 +39,12 @@ monthly AS (
         CAST(month_start_date AS STRING) AS period,
         partner,
         platform,
-        installs,
-        reinstalls,
-        installs + reinstalls AS total_install_events,
-        install_cost + reinstall_cost AS total_install_cost
+        clicks,
+        impressions,
+        SAFE_DIVIDE(clicks, impressions) AS ctr,
+        ROUND(SAFE_DIVIDE(clicks, impressions) * 100, 2) AS ctr_percentage
     FROM {{ ref('int_monthly_metrics') }}
+    WHERE impressions > 0
 ),
 
 combined AS (
@@ -57,11 +60,10 @@ SELECT
     period,
     partner,
     platform,
-    installs,
-    reinstalls,
-    total_install_events,
-    total_install_cost,
-    ROUND(total_install_cost, 2) AS total_install_cost_rounded
+    clicks,
+    impressions,
+    ctr,
+    ctr_percentage
 FROM combined
 
 ORDER BY
