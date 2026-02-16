@@ -2,6 +2,13 @@
 
 A production-ready data pipeline for mobile measurement analytics using Google Cloud Platform (GCS, BigQuery, DBT). This pipeline generates synthetic mobile measurement partner (MMP) data, transforms it into actionable business metrics, and loads it into BigQuery for dashboard consumption.
 
+## Project Summary
+
+**Technologies:** DBT, BigQuery, Google Cloud Storage, Python, GitHub, SQL
+
+- Engineered an end-to-end data pipeline to generate synthetic mobile measurement partner (MMP) events, automate uploads to GCS, and transform raw JSONL data through DBT staging, intermediate, and mart layers with automated data quality tests and schema validation.
+- Designed and implemented analytics-ready business metrics (CTR, CPI, installs/reinstalls) across daily, weekly, and monthly time grains using BigQuery external tables and DBT macros, enabling self-service BI dashboards and reducing query time for marketing stakeholders.
+
 ## Overview
 
 This pipeline addresses the need to validate app growth metrics with a "level of truth" for mobile measurement businesses. It demonstrates:
