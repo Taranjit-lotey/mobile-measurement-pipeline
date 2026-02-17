@@ -61,7 +61,51 @@ SELECT
     reinstalls,
     total_install_events,
     total_install_cost,
-    ROUND(total_install_cost, 2) AS total_install_cost_rounded
+    ROUND(total_install_cost, 2) AS total_install_cost_rounded,
+    -- Retention & conversion metrics
+    ROUND(SAFE_DIVIDE(reinstalls, installs) * 100, 2) AS reinstall_rate_percentage,
+    ROUND(SAFE_DIVIDE(installs, total_install_events) * 100, 2) AS new_user_percentage,
+    -- Growth indicators
+    LAG(installs) OVER (
+        PARTITION BY grain, partner, platform
+        ORDER BY period
+    ) AS previous_period_installs,
+    ROUND(
+        SAFE_DIVIDE(
+            installs - LAG(installs) OVER (
+                PARTITION BY grain, partner, platform
+                ORDER BY period
+            ),
+            LAG(installs) OVER (
+                PARTITION BY grain, partner, platform
+                ORDER BY period
+            )
+        ) * 100, 2
+    ) AS install_growth_rate_percentage,
+    -- Volume tiers
+    CASE
+        WHEN installs >= 50 THEN 'High Volume'
+        WHEN installs >= 20 THEN 'Medium Volume'
+        ELSE 'Low Volume'
+    END AS volume_tier,
+    -- Cumulative installs (running total)
+    SUM(installs) OVER (
+        PARTITION BY grain, partner, platform
+        ORDER BY period
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS cumulative_installs,
+    -- Partner market share
+    ROUND(
+        SAFE_DIVIDE(
+            installs,
+            SUM(installs) OVER (PARTITION BY grain, period, platform)
+        ) * 100, 2
+    ) AS partner_market_share_percentage,
+    -- Partner ranking by volume
+    RANK() OVER (
+        PARTITION BY grain, period, platform
+        ORDER BY installs DESC
+    ) AS partner_rank_by_volume
 FROM combined
 
 ORDER BY
