@@ -37,6 +37,88 @@ ORDER BY event_count DESC;
 
 
 -- ============================================================
+-- Query 4: Daily Metrics Summary
+-- ============================================================
+-- Check aggregated daily metrics
+SELECT
+    event_date,
+    partner,
+    platform,
+    installs,
+    clicks,
+    impressions,
+    ROUND(clicks / impressions * 100, 2) as ctr_pct,
+    ROUND(total_cost, 2) as total_cost
+FROM `mobile_measurement.int_daily_metrics`
+ORDER BY event_date DESC, partner
+LIMIT 20;
+
+
+-- ============================================================
+-- Query 5: CTR Validation
+-- ============================================================
+-- Expected: CTR between 2-5% (realistic for mobile ads)
+SELECT
+    grain,
+    partner,
+    ROUND(AVG(ctr_percentage), 2) as avg_ctr_pct,
+    ROUND(MIN(ctr_percentage), 2) as min_ctr_pct,
+    ROUND(MAX(ctr_percentage), 2) as max_ctr_pct,
+    COUNT(*) as record_count
+FROM `mobile_measurement.mart_click_through_rate`
+GROUP BY grain, partner
+ORDER BY grain, avg_ctr_pct DESC;
+
+
+-- ============================================================
+-- Query 6: CPI Validation
+-- ============================================================
+-- Expected: CPI between $1.50-$8.00
+SELECT
+    grain,
+    platform,
+    ROUND(AVG(cpi_direct_rounded), 2) as avg_cpi,
+    ROUND(MIN(cpi_direct_rounded), 2) as min_cpi,
+    ROUND(MAX(cpi_direct_rounded), 2) as max_cpi,
+    COUNT(*) as record_count
+FROM `mobile_measurement.mart_cost_per_install`
+GROUP BY grain, platform
+ORDER BY grain, avg_cpi;
+
+
+-- ============================================================
+-- Query 7: Grain Coverage Check
+-- ============================================================
+-- Expected: Records for 'daily', 'weekly', 'monthly' in all marts
+SELECT
+    'installs_reinstalls' as mart_name,
+    grain,
+    COUNT(*) as record_count
+FROM `mobile_measurement.mart_installs_reinstalls`
+GROUP BY grain
+
+UNION ALL
+
+SELECT
+    'click_through_rate' as mart_name,
+    grain,
+    COUNT(*) as record_count
+FROM `mobile_measurement.mart_click_through_rate`
+GROUP BY grain
+
+UNION ALL
+
+SELECT
+    'cost_per_install' as mart_name,
+    grain,
+    COUNT(*) as record_count
+FROM `mobile_measurement.mart_cost_per_install`
+GROUP BY grain
+
+ORDER BY mart_name, grain;
+
+
+-- ============================================================
 -- Query 8: Install Volume by Partner and Platform
 -- ============================================================
 -- Business insight: Which partner/platform combinations drive most installs?
